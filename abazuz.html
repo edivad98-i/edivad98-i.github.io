@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abaco Zuzzurellone Helper</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    <!-- React and ReactDOM CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel CDN for JSX transformation in browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Main App component for the Abaco Zuzzurellone helper
+        const App = () => {
+            // State to store the secret word chosen by the organizer
+            const [secretWord, setSecretWord] = React.useState('');
+            // State to store the current minimum word in the interval
+            const [currentMin, setCurrentMin] = React.useState('Abaco');
+            // State to store the current maximum word in the interval
+            const [currentMax, setCurrentMax] = React.useState('Zuzzurellone');
+            // State to store the word proposed by a player
+            const [proposedWord, setProposedWord] = React.useState('');
+            // State to display messages to the user (e.g., errors, success)
+            const [message, setMessage] = React.useState('');
+            // State to control if the game has started (secret word is set)
+            const [gameStarted, setGameStarted] = React.useState(false);
+            // State to control the visibility of the congratulations modal
+            const [showCongratsModal, setShowCongratsModal] = React.useState(false);
+
+            // Effect to clear messages after a short delay
+            React.useEffect(() => {
+                if (message) {
+                    const timer = setTimeout(() => {
+                        setMessage('');
+                    }, 3000); // Clear message after 3 seconds
+                    return () => clearTimeout(timer);
+                }
+            }, [message]);
+
+            // Function to handle setting the secret word
+            const handleSetSecretWord = () => {
+                // Trim whitespace from the secret word
+                const trimmedSecretWord = secretWord.trim().toLowerCase();
+                if (!trimmedSecretWord) {
+                    setMessage('Per favore, inserisci una parola segreta.');
+                    return;
+                }
+
+                // Reset interval to default when a new game starts
+                setCurrentMin('Abaco');
+                setCurrentMax('Zuzzurellone');
+                setSecretWord(trimmedSecretWord); // Store the secret word
+                setProposedWord(''); // Clear any previous proposed word
+                setGameStarted(true);
+                setMessage(`Parola segreta impostata. Inizia il gioco!`);
+            };
+
+            // Function to handle checking a proposed word
+            const handleCheckProposedWord = () => {
+                if (!gameStarted) {
+                    setMessage('Per favore, imposta prima la parola segreta.');
+                    return;
+                }
+                // Trim whitespace and convert to lowercase for case-insensitive comparison
+                const trimmedProposedWord = proposedWord.trim().toLowerCase();
+
+                if (!trimmedProposedWord) {
+                    setMessage('Per favore, inserisci una parola proposta.');
+                    return;
+                }
+
+                // Check if the proposed word is the secret word
+                if (trimmedProposedWord === secretWord) {
+                    setShowCongratsModal(true); // Show congratulations modal
+                    setGameStarted(false); // End the game
+                    return;
+                }
+
+                // Compare the proposed word with the secret word alphabetically
+                if (trimmedProposedWord < secretWord) {
+                    // If proposed word is alphabetically before the secret word, update currentMin
+                    // Ensure proposed word is greater than currentMin to update the interval correctly
+                    if (trimmedProposedWord > currentMin.toLowerCase()) {
+                        setCurrentMin(trimmedProposedWord);
+                        setMessage(`La parola segreta è compresa tra "${trimmedProposedWord}" e "${currentMax}".`);
+                    } else {
+                        setMessage(`La parola proposta "${trimmedProposedWord}" è già fuori dall'intervallo inferiore o uguale al limite inferiore. Riprova.`);
+                    }
+                } else { // trimmedProposedWord > secretWord
+                    // If proposed word is alphabetically after the secret word, update currentMax
+                    // Ensure proposed word is less than currentMax to update the interval correctly
+                    if (trimmedProposedWord < currentMax.toLowerCase()) {
+                        setCurrentMax(trimmedProposedWord);
+                        setMessage(`La parola segreta è compresa tra "${currentMin}" e "${trimmedProposedWord}".`);
+                    } else {
+                        setMessage(`La parola proposta "${trimmedProposedWord}" è già fuori dall'intervallo superiore o uguale al limite superiore. Riprova.`);
+                    }
+                }
+                setProposedWord(''); // Clear the proposed word input after checking
+            };
+
+            // Function to reset the game
+            const handleResetGame = () => {
+                setSecretWord('');
+                setCurrentMin('Abaco');
+                setCurrentMax('Zuzzurellone');
+                setProposedWord('');
+                setMessage('Gioco resettato. Inizia una nuova partita!');
+                setGameStarted(false);
+                setShowCongratsModal(false); // Hide the modal on reset
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-200 flex items-center justify-center p-4 font-sans">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+                        <h1 className="text-3xl font-extrabold text-center text-gray-800 mb-6">
+                            Abaco Zuzzurellone Helper
+                        </h1>
+
+                        {/* Message display area */}
+                        {message && (
+                            <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-xl mb-6 text-center text-sm" role="alert">
+                                {message}
+                            </div>
+                        )}
+
+                        {/* Section to set the secret word */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <label htmlFor="secretWord" className="block text-gray-700 text-sm font-semibold mb-2">
+                                1. Inserisci la Parola Segreta:
+                            </label>
+                            <input
+                                type="text" // Keep as text to allow input, then disable
+                                id="secretWord"
+                                className="shadow-sm appearance-none border rounded-xl w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
+                                value={gameStarted ? '' : secretWord} // Clear input value if game started
+                                onChange={(e) => setSecretWord(e.target.value)}
+                                placeholder="Es: 'casa'"
+                                disabled={gameStarted} // Disable input once game starts
+                            />
+                            <button
+                                onClick={handleSetSecretWord}
+                                className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={gameStarted}
+                            >
+                                Imposta Parola Segreta
+                            </button>
+                        </div>
+
+                        {/* Current Interval Display */}
+                        <div className="mb-6 p-4 bg-green-50 rounded-xl border border-green-100 text-center">
+                            <p className="text-lg font-bold text-green-800 mb-2">Intervallo Attuale:</p>
+                            <p className="text-2xl font-extrabold text-green-900">
+                                "{currentMin}" - "{currentMax}"
+                            </p>
+                        </div>
+
+                        {/* Section to propose words */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <label htmlFor="proposedWord" className="block text-gray-700 text-sm font-semibold mb-2">
+                                2. Inserisci la Parola Proposta:
+                            </label>
+                            <input
+                                type="text"
+                                id="proposedWord"
+                                className="shadow-sm appearance-none border rounded-xl w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200 ease-in-out"
+                                value={proposedWord}
+                                onChange={(e) => setProposedWord(e.target.value)}
+                                placeholder="Es: 'albero'"
+                                disabled={!gameStarted} // Enable only if game has started
+                            />
+                            <button
+                                onClick={handleCheckProposedWord}
+                                className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={!gameStarted}
+                            >
+                                Verifica Parola Proposta
+                            </button>
+                        </div>
+
+                        {/* Reset Button */}
+                        <button
+                            onClick={handleResetGame}
+                            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50 transition duration-200 ease-in-out transform hover:scale-105"
+                        >
+                            Nuova Partita
+                        </button>
+                    </div>
+
+                    {/* Congratulations Modal */}
+                    {showCongratsModal && (
+                        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full border border-green-300">
+                                <h2 className="text-3xl font-extrabold text-green-700 mb-4">🎉 Complimenti! 🎉</h2>
+                                <p className="text-lg text-gray-800 mb-6">
+                                    Hai indovinato la parola segreta: <span className="font-bold text-purple-700">"{secretWord}"</span>!
+                                </p>
+                                <button
+                                    onClick={handleResetGame}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out transform hover:scale-105"
+                                >
+                                    Inizia una Nuova Partita
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Render the App component into the root div
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
